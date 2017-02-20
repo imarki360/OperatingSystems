@@ -14,7 +14,7 @@
 
 int getRealPage(__s32 image_map[], int Page, int diskSize);
 //template <class T>
-int getData(char data[], int fd, VirtualBox header, __s32 image_map[], int byteStart, int bytes, int arraySize);
+int getData(char* data, int fd, VirtualBox header, __s32 image_map[], int byteStart, int bytes, int arraySize);
 
 int main()
 {
@@ -50,7 +50,7 @@ int main()
 }
 
 //template <class T>
-int getData(char data[], int fd, VirtualBox header, __s32 image_map[], int byteStart, int bytes, int arraySize)
+int getData(char* data, int fd, VirtualBox header, __s32 image_map[], int byteStart, int bytes, int arraySize)
 {
 
 	int byteDiff = bytes - byteStart;
