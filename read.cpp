@@ -34,11 +34,15 @@ int main()
 	__s32* image_map = new __s32[header.disk_size_bytes >> 20]; //malloc(sizeof(__s32) * (header.disk_size_bytes >> 20));//
 	read(file,image_map, (header.disk_size_bytes >> 20));
 
-	int arraySize = sizeof(512);
+	int arraySize = 512;//sizeof(512);
 	char* data = new char[512];//malloc(sizeof(char) * length);
 
 	getData(data, file, header, image_map, 0, 512, 512);
-	printf("%x\n", data[512]);
+
+  for (int i = 0; i < 512; i++)
+  {
+    printf("%x\t",data[i]);
+  }
 	memcpy(&boot, data, arraySize);
 	printf("%x\n", boot.magic);
 
