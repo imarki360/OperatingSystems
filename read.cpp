@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <iomanip>
 
+const int EXT2_Super_block_offset = 1024;
+
 int getRealPage(__s32 image_map[], int Page, int diskSize);
 //template <class T>
 int getData(char* data, int fd, VirtualBox header, __s32 image_map[], int byteStart, int bytes, int arraySize);
@@ -28,7 +30,7 @@ int main()
 	lseek(file, 0, SEEK_SET);
 	//char* buf = new char[length];
 	read(file, &header, sizeof(header));
-	//printf("%x\n%x\n\n", header.offset_data, 4 * (header.disk_size_bytes >> 20));
+	//printf("%x\n", header.offset_data);
 	lseek(file, header.offset_blocks, SEEK_SET);
 	//Read in image map 32-bit entries
 	__s32* image_map = new __s32[header.disk_size_bytes >> 20]; //malloc(sizeof(__s32) * (header.disk_size_bytes >> 20));//
@@ -38,13 +40,10 @@ int main()
 	char* data = new char[512];//malloc(sizeof(char) * length);
 
 	getData(data, file, header, image_map, 0, 512, 512);
+  printf("\n\n\nBEGIN RETURNED DATA:\n\n");
 
-  for (int i = 0; i < 512; i++)
-  {
-    printf("%x\t",data[i]);
-  }
 	memcpy(&boot, data, arraySize);
-	printf("%x\n", boot.magic);
+	printf("%x\n", boot.partitionTable[0].firstSector);
 
 	return 0;
 }
@@ -60,10 +59,13 @@ int getData(char* data, int fd, VirtualBox header, __s32 image_map[], int byteSt
 
 	while(byteDiff - currentBytes > 0)
 	{
+
 		int realPage = getRealPage(image_map, currentPage, header.disk_size_bytes);
 		int pageOffset = header.offset_data + byteStart;
 		int bytesToRead = byteDiff - currentBytes;
 		char* dataBuffer = new char[bytesToRead];//malloc(sizeof(char) * bytesToRead);
+
+    //printf("Bytes to Read: %i\nRealPage: %i\npageOffset: %i\nHeaderOffset: %i",bytesToRead, realPage, pageOffset,header.offset_data);
 
 		if (realPage << 20 >= 0)
 		{
@@ -75,9 +77,10 @@ int getData(char* data, int fd, VirtualBox header, __s32 image_map[], int byteSt
 		{
 			memset(dataBuffer,0, bytesToRead);
 		}
-		for (int j = 0; j < bytesToRead; j++)
+		for (int j = 0; j <= bytesToRead; j++)
 		{
 			data[currentBytes + j] = dataBuffer[j];
+
 		}
 		currentBytes += bytesToRead;
 		currentPage++;
