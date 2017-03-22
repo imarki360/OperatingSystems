@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "ext2fs/ext2_fs.h"
+#include "ext2_fs.h"
 #include "read.h"
 #include <iostream>
 #include <string>
