@@ -14,7 +14,9 @@
 
 const int EXT2_SUPER_BLOCK_OFFSET = 1024;
 
+//Function to get "physical" page from the vdi file
 int getRealPage(__s32 image_map[], int Page, int diskSize);
+//get data from file
 //template <class T>
 int getData(char* data, int fd, VirtualBox header, __s32 image_map[], int byteStart, int bytes);
 
@@ -61,6 +63,14 @@ int main()
 	/*
 	 * Okay, using the superblock, we can now go thorugh the inodes and work thorugh the directory structure
 	 */
+
+	//loop through for each inode and place each inode into an array of structs
+	struct inodes[] = new ext2_inode[mark_ext2_super_block.s_inodes_count]
+	for (size_t i = 0; i < mark_ext2_super_block.s_inodes_count; i++) {
+		/* code */
+		
+	}
+
 
 	printf("\n");
 	return 0;
