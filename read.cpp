@@ -1,5 +1,5 @@
-#include <sys/types.h>
-#include <sys/stat.h>
+//#include <sys/types.h>
+//#include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -26,7 +26,7 @@ int main()
 	struct BootSector boot;
 	char pathname[280] = "Debian1.0.vdi";
 	int file = open(pathname,O_RDONLY);
-	int length = lseek(file,0,SEEK_END) + 1;
+	//int length = lseek(file,0,SEEK_END) + 1;
 
 	lseek(file, 0, SEEK_SET);
 	read(file, &header, sizeof(header));
@@ -53,6 +53,7 @@ int main()
 
 	//prepare to read in ext2_super_block
 	struct mark_ext2_super_block superblock;
+	printf("size: %i\nsize: %i",sizeof(mark_ext2_super_block),sizeof(ext2_super_block));
 	//read in superblock
 	char* data_superblock = new char[sizeof(ext2_super_block)];
 	getData(data_superblock, file, header,image_map, (boot.partitionTable[0].firstSector * header.sector_size) + EXT2_SUPER_BLOCK_OFFSET, sizeof(ext2_super_block));
@@ -65,12 +66,12 @@ int main()
 	 */
 
 	//loop through for each inode and place each inode into an array of structs
-	struct inodes[] = new ext2_inode[mark_ext2_super_block.s_inodes_count]
-	for (size_t i = 0; i < mark_ext2_super_block.s_inodes_count; i++) {
+	struct ext2_inode *inodes[superblock.s_inodes_count];
+	for (size_t i = 0; i < superblock.s_inodes_count; i++)
+	{
 		/* code */
-		
-	}
 
+	}
 
 	printf("\n");
 	return 0;
@@ -89,7 +90,7 @@ int getData(char* data, int fd, VirtualBox header, __s32 image_map[], int byteSt
 	{
 
 		int realPage = getRealPage(image_map, currentPage, header.disk_size_bytes);
-		int pageOffset = header.offset_data + byteStart + (realPage - currentPage << 20);
+		int pageOffset = header.offset_data + byteStart + (realPage - (currentPage << 20));
 		int bytesToRead = byteDiff - currentBytes;
 		char* dataBuffer = new char[bytesToRead];//malloc(sizeof(char) * bytesToRead);
 

@@ -2,3 +2,6 @@
 read\.o
 Debian1.0.vdi
 a.out
+a.exe
+*.gch*
+read
