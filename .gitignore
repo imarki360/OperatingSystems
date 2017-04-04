@@ -5,3 +5,5 @@ a.out
 a.exe
 *.gch*
 read
+read.exe
+commit_notes.txt

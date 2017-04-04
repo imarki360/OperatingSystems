@@ -1,4 +1,4 @@
- g++ -Wall -Wpadded -fpack-struct=1 read.cpp
+# g++ -Wall -Wpadded -fpack-struct=1 read.cpp
 
 # the compiler: gcc for C program, define as g++ for C++
 CC = g++
@@ -18,3 +18,6 @@ $(TARGET): $(TARGET).cpp
 
 clean:
 	$(RM) $(TARGET)
+
+run:
+	./$(TARGET)

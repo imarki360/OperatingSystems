@@ -20,6 +20,9 @@ int getRealPage(__s32 image_map[], int Page, int diskSize);
 //template <class T>
 int getData(char* data, int fd, VirtualBox header, __s32 image_map[], int byteStart, int bytes);
 
+int getBlock(int);
+int getBlock(int, int);
+
 int main()
 {
 	struct VirtualBox header;
@@ -47,30 +50,59 @@ int main()
 	getData(data, file, header, image_map, 0, arraySize);
 	memcpy(&boot, data, arraySize);
 	delete data;
+
 	/*
 	 * Now that we have the MBR, we can then figure out where the ext2 filesystem lies.
 	*/
 
 	//prepare to read in ext2_super_block
-	struct mark_ext2_super_block superblock;
-	printf("size: %i\nsize: %i",sizeof(mark_ext2_super_block),sizeof(ext2_super_block));
+	struct ext2_super_block superblock;
 	//read in superblock
 	char* data_superblock = new char[sizeof(ext2_super_block)];
 	getData(data_superblock, file, header,image_map, (boot.partitionTable[0].firstSector * header.sector_size) + EXT2_SUPER_BLOCK_OFFSET, sizeof(ext2_super_block));
 	memcpy(&superblock, data_superblock, sizeof(ext2_super_block));
 	delete data_superblock;
-	printf("inode_count: %02x",superblock.s_inodes_count);
 
+	/* //Debug:
+	printf("inode_count: %x\n",superblock.s_inodes_count);
+	printf("firstSector: %x\n",boot.partitionTable[0].firstSector);
+	printf("sector_size: %x\n",header.sector_size);
+	*/
 	/*
 	 * Okay, using the superblock, we can now go thorugh the inodes and work thorugh the directory structure
 	 */
+
+	 //first lets find position of block group descriptor table:
+
+
+	 /*
+	  * The block group discripor table is located in:
+		* third block on a 1KiB file system
+		* or 2nd block on a >= 2KiB file system
+		* file system size is superblock.s_log_block_size (block size = 1024 << s_log_block_size;)
+		*
+	 */
+	 printf("Filesytem type: %i\n", (superblock.s_log_block_size));
+	 int bgdtPosition = ((superblock.s_log_block_size >= 2) ? 2 : 3);
+	 printf("bgdtPosition: %i\n", bgdtPosition);
+
 
 	//loop through for each inode and place each inode into an array of structs
 	struct ext2_inode *inodes[superblock.s_inodes_count];
 	for (size_t i = 0; i < superblock.s_inodes_count; i++)
 	{
 		/* code */
+		//so, we want to read in each inode and put them into the struct array. To do This
+		//we need to grab the position of the current inode. then read it into the array.
 
+		//allocate struct
+		inodes[i] = new struct ext2_inode;
+
+		//calculate inode position
+
+
+		//read in inode
+		//inodes[i] =
 	}
 
 	printf("\n");
@@ -90,7 +122,7 @@ int getData(char* data, int fd, VirtualBox header, __s32 image_map[], int byteSt
 	{
 
 		int realPage = getRealPage(image_map, currentPage, header.disk_size_bytes);
-		int pageOffset = header.offset_data + byteStart + (realPage - (currentPage << 20));
+		int pageOffset = header.offset_data + byteStart + ((realPage - currentPage) << 20);
 		int bytesToRead = byteDiff - currentBytes;
 		char* dataBuffer = new char[bytesToRead];//malloc(sizeof(char) * bytesToRead);
 
@@ -145,4 +177,13 @@ int getRealPage(__s32 image_map[], int Page, int diskSize)
 {
 	//add check for out of disksize
 	return image_map[Page];
+}
+
+int getBlock(int blockNumber)
+{
+ return 0;
+}
+int getBlock(int blockNumber, int bytes)
+{
+	return 0;
 }
