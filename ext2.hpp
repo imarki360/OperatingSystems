@@ -12,16 +12,26 @@ private:
   struct BootSector mbr;
   int ext2FirstSector_byte;
   struct ext2_super_block superblock;
-  struct ext2_group_desc blockGDescriptor;
+  struct ext2_group_desc* blockGDescriptorTable;
+  unsigned int group_count;
+  unsigned int sizeBlockGDescritorTable;
   long long blockGroupDescriptorTableLocation;
 
 public:
-  ext2(VirtualBoxClass* vb);
+  ext2(VirtualBoxClass* VirtualBox);
 
   char* getBlock(int blockNumber);
   char* getBlock(int blockNumber, int bytes);
   char* getBlock(int blockNumber, int bytes, int offsetBytes);
 
-  struct ext2_inode getInode(int inode);
+  struct ext2_inode getInode(int blockNumber, int inode);
+  int verify_superblocks();
+  int verify_blockgrouptables();
+  int verify_inodes();
+  int verify_directory();
+  int verify_datablocks();
+
+  //output based:
+  char* general_stats();
 };
 #endif
