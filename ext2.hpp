@@ -2,7 +2,7 @@
 #define EXT2_H
 
 #include "ext2_fs.h"
-#include "classes.hpp"
+#include "VirtualBox.hpp"
 #include "mbr.h"
 
 class ext2 {

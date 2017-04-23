@@ -2,7 +2,7 @@
 #define EXT2
 
 #include "ext2.hpp"
-#include "classes.cpp"
+#include "VirtualBox.cpp"
 #include <cstring>
 #include <stdio.h>
 

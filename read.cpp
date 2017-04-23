@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <iomanip>
 
-#include "classes.cpp"
+#include "VirtualBox.cpp"
 #include "ext2.cpp"
 
 const int EXT2_SUPER_BLOCK_OFFSET = 1024;

@@ -1,7 +1,7 @@
 #ifndef VIRTUALBOX
 #define VIRTUALBOX
 
-#include "classes.hpp"
+#include "VirtualBox.hpp"
 #include <cstring>
 #include <unistd.h>
 
