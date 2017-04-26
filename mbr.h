@@ -1,6 +1,7 @@
 #include "ext2_fs.h"
 
 const __u16 BOOT_SECTOR_MAGIC = 0xaa55;
+const int MBR_NUM_PARTITIONS = 4;
 
 // an entry in the partition table. the unused entries really hold information,
 // but the information is antiquated and not useful for our purposes here

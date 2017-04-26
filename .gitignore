@@ -9,3 +9,8 @@ read.exe
 commit_notes.txt
 notes.txt
 .vs/**
+read.exe
+.vscode/**
+Test-fixed-1k.vdi 
+output 
+vdi-hex-trunc-start-v2

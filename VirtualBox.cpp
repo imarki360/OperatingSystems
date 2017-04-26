@@ -12,9 +12,14 @@ VirtualBoxClass::VirtualBoxClass(int filedescriptor) : fd(filedescriptor)
 
   //Read in image map as 32-bit entries
   lseek(fd, header.offset_blocks, SEEK_SET);
-  printf("Header.offset_blocks: %x\n",header.offset_blocks);
+  //printf("Header.offset_blocks: %x\n",header.offset_blocks);
   image_map = new __s32[header.disk_size_bytes >> 20]; //malloc(sizeof(__s32) * (header.disk_size_bytes >> 20));//
 	read(fd, image_map, (header.disk_size_bytes >> 20));
+
+  for (int i = 0; i < (header.disk_size_bytes >> 20); i++)
+  {
+    printf("%i: %x\n",i,image_map[i]);
+  }
 }
 
 void VirtualBoxClass::getBytes(char* data, int byteStart, int bytes)

@@ -10,7 +10,7 @@ private:
   VirtualBoxClass* vb;
   const static int EXT2_SUPER_BLOCK_OFFSET = 1024;
   struct BootSector mbr;
-  int ext2FirstSector_byte;
+  unsigned int ext2FirstSector_byte;
   struct ext2_super_block superblock;
   struct ext2_group_desc* blockGDescriptorTable;
   unsigned int group_count;
@@ -24,7 +24,9 @@ public:
   char* getBlock(int blockNumber, int bytes);
   char* getBlock(int blockNumber, int bytes, int offsetBytes);
 
-  struct ext2_inode getInode(int blockNumber, int inode);
+  struct ext2_inode getInode(int inode);
+
+  //verification:
   int verify_superblocks();
   int verify_blockgrouptables();
   int verify_inodes();
@@ -33,5 +35,20 @@ public:
 
   //output based:
   char* general_stats();
+
+  //operator overloading:
+  //bool operator==(const ext2_super_block& rhs) const;
+  //bool operator==(const ext2_group_desc& rhs) const;
 };
+
+//exceptions:
+class inodeNotAllocated {};
+class no_valid_ext2_partition {}; //no partiton with type 0x83 was found
+class invalid_bootSector {}; //bootSector magic number does not match
+class invalid_superblock {}; //superblock magic number does not match
+
+//other functions
+
+template<typename T> void printElement(T t, const int& width);
+
 #endif
