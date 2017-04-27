@@ -5,7 +5,7 @@ a.out
 a.exe
 *.gch*
 read
-read.exe
+read\.exe
 commit_notes.txt
 notes.txt
 .vs/**

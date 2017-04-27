@@ -13,21 +13,23 @@ VirtualBoxClass::VirtualBoxClass(int filedescriptor) : fd(filedescriptor)
   //Read in image map as 32-bit entries
   lseek(fd, header.offset_blocks, SEEK_SET);
   //printf("Header.offset_blocks: %x\n",header.offset_blocks);
-  image_map = new __s32[header.disk_size_bytes >> 20]; //malloc(sizeof(__s32) * (header.disk_size_bytes >> 20));//
-	read(fd, image_map, (header.disk_size_bytes >> 20));
-
-  for (int i = 0; i < (header.disk_size_bytes >> 20); i++)
+  image_map = new __s32[header.blocks_in_hdd]; //malloc(sizeof(__s32) * (header.disk_size_bytes >> 20));//
+  //__s32 image_map[2048 +1];
+  read(fd, image_map, header.blocks_in_hdd * sizeof(__s32));
+	//read(fd, image_map, (header.disk_size_bytes >> 20));
+  //printf("size s32: %x\n", sizeof(__s32));
+  /*for (int i = 0; i < 2048; i++) // < (header.disk_size_bytes >> 20); i++)
   {
-    printf("%i: %x\n",i,image_map[i]);
-  }
+    printf("%i: %i\n",i,image_map[i]);
+  }*/
 }
 
 void VirtualBoxClass::getBytes(char* data, int byteStart, int bytes)
 {
-  printf("byteStart: 0x%x\n", byteStart);
+  //printf("byteStart: 0x%x\n", byteStart);
   int byteDiff = bytes;
 	int virtualPageStart = byteStart >> 20;
-  printf("virtualPageStart: %i\n", virtualPageStart);
+  //printf("virtualPageStart: %i\n", virtualPageStart);
 	int currentBytes = 0;
 	int currentPage = virtualPageStart;
 
@@ -46,7 +48,7 @@ void VirtualBoxClass::getBytes(char* data, int byteStart, int bytes)
 		else
 		{
       int pageOffset = header.offset_data + byteStart + ((realPage - currentPage) << 20);
-      printf("Bytes to Read: 0x%x\nRealPage: 0x%x\ncurrentPage: 0x%x\npageOffset: 0x%x\nHeaderOffset: 0x%x\n\n",bytesToRead, realPage,currentPage, pageOffset,header.offset_data);
+      //printf("Bytes to Read: 0x%x\nRealPage: 0x%x\ncurrentPage: 0x%x\npageOffset: 0x%x\nHeaderOffset: 0x%x\n\n",bytesToRead, realPage,currentPage, pageOffset,header.offset_data);
 
 			lseek(fd,pageOffset,SEEK_SET);
 			read(fd, dataBuffer, bytesToRead);

@@ -50,5 +50,6 @@ class invalid_superblock {}; //superblock magic number does not match
 //other functions
 
 template<typename T> void printElement(T t, const int& width);
+bool isPowerof357(unsigned int);
 
 #endif

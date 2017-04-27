@@ -133,9 +133,9 @@ struct ext2_inode ext2::getInode(int inode)
 int ext2::verify_superblocks()
 {
 	//take the number of block groups and then read in the superblock copies.
-	bool consistant = true;
-	const int width = 20;
+	const int width = 17;
 
+	printElement("block Group",width);
 	printElement("inodes count", width);
 	printElement("blocks count", width);
 	printElement("r blocks count", width);
@@ -146,6 +146,7 @@ int ext2::verify_superblocks()
 
 	std::cout << std::endl;
 
+	printElement("Superblock",width);
 	printElement(superblock.s_inodes_count, width);
 	printElement(superblock.s_blocks_count, width);
 	printElement(superblock.s_r_blocks_count, width);
@@ -158,11 +159,13 @@ int ext2::verify_superblocks()
 
 	for (unsigned int i = 0; i < group_count; i++)
 	{
-		if (i % 3 == 0 || i % 5 ==0 || i % 7 == 0)
+		if (isPowerof357(i))
 		{
 			ext2_super_block *copy;
 			copy = (ext2_super_block *) getBlock(i*superblock.s_blocks_per_group,( 1024 << superblock.s_log_block_size), superblock.s_first_data_block);
 
+			//print current block group
+			printElement(i,width);
 			//test the important bits;
 			printElement(copy->s_inodes_count, width);
 			printElement(copy->s_blocks_count, width);
@@ -179,6 +182,7 @@ int ext2::verify_superblocks()
 	}
 	std::cout << std::endl;
 
+	printElement("block Group",width);
 	printElement("frags per group", width);
 	printElement("magic", width);
 	printElement("minor rev level", width);
@@ -188,7 +192,7 @@ int ext2::verify_superblocks()
 	printElement("inode size", width);
 
 	std::cout << std::endl;
-
+	printElement("Superblock",width);
 	printElement(superblock.s_clusters_per_group, width);
 	printElement(superblock.s_magic, width);
 	printElement(superblock.s_minor_rev_level, width);
@@ -201,11 +205,13 @@ int ext2::verify_superblocks()
 
 	for (unsigned int i = 1; i < group_count; i++)
 	{
-		if (i % 3 == 0 || i % 5 ==0 || i % 7 == 0)
+		if (isPowerof357(i))
 		{
 			ext2_super_block *copy; // = new ext2_super_block[sizeof(ext2_super_block)];
 			copy = (ext2_super_block *) getBlock(i*superblock.s_blocks_per_group,( 1024 << superblock.s_log_block_size), superblock.s_first_data_block);
 
+			//print current block group
+			printElement(i,width);
 			//test the important bits;
 			printElement(copy->s_clusters_per_group, width);
 			printElement(copy->s_magic, width);
@@ -225,37 +231,25 @@ int ext2::verify_superblocks()
 
 int ext2::verify_blockgrouptables()
 {
-	bool consistant = true;
-	for (int i = 0; i < group_count; i++)
+	for (unsigned int i = 0; i < group_count; i++)
 	{
-		if (i % 3 == 0 || i % 5 ==0 || i % 7 == 0)
+		if (isPowerof357(i))
 		{
 
 		}
 	}
 	return 0;
 }
-/*
-bool ext2::operator==(const ext2_super_block& rhs) const
-{
-	return (this->superblock.s_log_block_size == rhs.s_log_block_size &&
-		this->superblock.s_inodes_count == rhs.s_inodes_count &&
-		this->superblock.s_blocks_count == rhs.s_blocks_count &&
-		this->superblock.s_magic == rhs.s_magic);
-}
-
-bool ext2::operator==(const ext2_group_desc& rhs) const
-{
-	bool consistant = true;
-	if (ext2_group_desc.bg_block_bitmap != copy.bg_block_bitmap)
-		consistant = false;
-	if (ext2_group_desc.bg)
-}
-*/
 
 template<typename T> void printElement(T t, const int& width)
 {
     std::cout << std::left << std::setw(width) << std::setfill(' ') << t;
+}
+
+bool isPowerof357(unsigned int number)
+{
+	//this was a fun one
+	return (number != 0 && 3486784401u % number == 0) || (number != 0 && 95367431640625u % number == 0) || (number != 0 && 79792266297612001u % number == 0);
 }
 
 #endif
