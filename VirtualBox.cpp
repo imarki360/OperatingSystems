@@ -12,16 +12,8 @@ VirtualBoxClass::VirtualBoxClass(int filedescriptor) : fd(filedescriptor)
 
   //Read in image map as 32-bit entries
   lseek(fd, header.offset_blocks, SEEK_SET);
-  //printf("Header.offset_blocks: %x\n",header.offset_blocks);
-  image_map = new __s32[header.blocks_in_hdd]; //malloc(sizeof(__s32) * (header.disk_size_bytes >> 20));//
-  //__s32 image_map[2048 +1];
+  image_map = new __s32[header.blocks_in_hdd];
   read(fd, image_map, header.blocks_in_hdd * sizeof(__s32));
-	//read(fd, image_map, (header.disk_size_bytes >> 20));
-  //printf("size s32: %x\n", sizeof(__s32));
-  /*for (int i = 0; i < 2048; i++) // < (header.disk_size_bytes >> 20); i++)
-  {
-    printf("%i: %i\n",i,image_map[i]);
-  }*/
 }
 
 void VirtualBoxClass::getBytes(char* data, int byteStart, int bytes)
@@ -44,6 +36,7 @@ void VirtualBoxClass::getBytes(char* data, int byteStart, int bytes)
 		if (realPage == -1)
 		{
 			memset(dataBuffer,0, bytesToRead);
+      //printf("Not real Page\n");
 		}
 		else
 		{

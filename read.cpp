@@ -22,15 +22,19 @@ int main()
 	/*
 	 * TODO: Implitent a command line parser.
 	 */
-	char pathname[280] = "Debian1.0.vdi";
-	//char pathname[280] = "Test-fixed-1k.vdi";
+	//char pathname[280] = "Debian1.0.vdi";
+	//char pathname[280] = "Test-fixed-4k.vdi";
+	char pathname[280] = "Test-dynamic-1k.vdi";
 	int file = open(pathname,O_RDONLY);
+	if (file == -1)
+		throw CouldNotReadFile();
 	//int length = lseek(file,0,SEEK_END) + 1;
 
 	VirtualBoxClass vb(file);
 	ext2 ext2FileSystem(&vb);
 	ext2FileSystem.verify_superblocks();
-
+	ext2FileSystem.dump_blockgrouptables();
+	ext2FileSystem.verify_inodes();
 
 	std::cout << std::endl;
 	//close(file);

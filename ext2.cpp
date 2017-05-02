@@ -6,8 +6,6 @@
 #include <cstring>
 #include <stdio.h>
 #include <assert.h>
-#include <iomanip>
-#include <iostream>
 
 ext2::ext2(VirtualBoxClass* VirtualBox) : vb(VirtualBox)
 {
@@ -61,14 +59,14 @@ ext2::ext2(VirtualBoxClass* VirtualBox) : vb(VirtualBox)
 	 * Now, lets read in the Block Group descriptor table
 	*/
 
-	blockGroupDescriptorTableLocation = ((superblock.s_log_block_size >= 2) ? 2 : 3) - 1;
+	blockGroupDescriptorTableLocation = ((superblock.s_log_block_size > 0) ? 1 : 2);
 
-	printf("Location: %lli\nblock_size: %u\nblocks_count: %u\nblocks_per_group: %u\nsize_groupdesc: %lu\n",
-				blockGroupDescriptorTableLocation,
-				superblock.s_log_block_size,
-				superblock.s_blocks_count,
-				superblock.s_blocks_per_group,
-				sizeof(ext2_group_desc));
+	// printf("Location: %lli\nblock_size: %x\nblocks_count: %u\nblocks_per_group: %u\nsize_groupdesc: %u\n",
+	// 			(long long int) blockGroupDescriptorTableLocation,
+	// 			(unsigned int) superblock.s_log_block_size,
+	// 			(unsigned int) superblock.s_blocks_count,
+	// 			(unsigned int) superblock.s_blocks_per_group,
+	// 			(unsigned int) sizeof(ext2_group_desc));
 
 	group_count = 1 + (superblock.s_blocks_count-1) / superblock.s_blocks_per_group;
 	sizeBlockGDescritorTable = sizeof(ext2_group_desc) * group_count;
@@ -78,10 +76,9 @@ ext2::ext2(VirtualBoxClass* VirtualBox) : vb(VirtualBox)
 	blockGDescriptorTable = new struct ext2_group_desc[group_count];
 
 	data = getBlock(blockGroupDescriptorTableLocation, sizeBlockGDescritorTable);
-	blockGDescriptorTable = (ext2_group_desc *) data;
+	std::memcpy(blockGDescriptorTable,data,sizeBlockGDescritorTable);
 	delete data;
-	//printf("table[1].bg_block_bitmap: 0x%x\n",blockGDescriptorTable[1].bg_block_bitmap);
-
+	//printf("table[0].bg_inode_bitmap: 0x%x\n",blockGDescriptorTable[0].bg_inode_bitmap);
 }
 
 char* ext2::getBlock(int blockNumber)
@@ -105,145 +102,177 @@ char* ext2::getBlock(int blockNumber, int bytes, int offsetBytes)
 	return data;
 }
 
-struct ext2_inode ext2::getInode(int inode)
+struct ext2_inode ext2::getInode(unsigned long long inode)
 {
 	/*
 	 * By now, we have the block group discriptor table.
 	 * We can use this to grab any specific inode.
 	 * To do so, we need to lookup s_inodes_per_group and then calculate which block group that inode is in.
 	 * Then, we lookup the inode in the appropiate bitmap from the bgdt. if it is free, then throw inodeNotAllocated();
-	 * if allocated, then return the inode struct
+	 * if allocated, then return the inode struct. The inode table can be found at blockGDescriptorTable.bg_inode_table + (blockgroup * superblock.s_blocks_per_group);
 	 */
 
 	 int blockGroupOfInode = inode / superblock.s_inodes_per_group;
-	 int inodeInGroup = inode % superblock.s_inodes_per_group;
-	 int* inode_map = new int[superblock.s_inodes_per_group];
-	 char* data = getBlock(blockGDescriptorTable[blockGroupOfInode].bg_inode_bitmap, sizeof(__u32) * superblock.s_inodes_per_group, sizeof(__u32) * superblock.s_blocks_per_group);
+	 unsigned long long inodeInGroup = inode % superblock.s_inodes_per_group;
 
-	 inode_map = (int*) data;
- 	 //TODO: check if allocated
+	//  printf("inodeInGroup: %i\n",inodeInGroup);
+	//  printf("blockGroupOfInode: %i\n", blockGroupOfInode);
+	//  printf("inodesPerGroup: %u\n", superblock.s_inodes_per_group);
+
+	 bool* inode_map;
+	 inode_map = (bool*) getBlock(blockGDescriptorTable[blockGroupOfInode].bg_inode_bitmap, superblock.s_inodes_per_group / 8);
+
+	 /*
+	  * Of course, since sizeof(bool) = 1 byte, we now need to to some bit shifting to get the
+		* information we want.
+		*
+	 */
+
+	 int temp = inode_map[inodeInGroup / 8];
+	 temp = (temp >> inodeInGroup) & 0x1;
+
+	 if (temp == 0 || inode == 0)
+	 {
+		 printf("inodeNotAllocated\n");
+		 throw inodeNotAllocated();
+	 }
 
 	 //TODO: check if inode is actually in use, but is not marked as allocated, or is marked as allocated but not in use.
 
-	 struct ext2_inode hi;
-	 return hi;
+	 //Get the inode:
+	//  printf("Inode Block: 0x%x\n", blockGDescriptorTable[blockGroupOfInode].bg_inode_table);
+	//  printf("Inode Offset: 0x%x\n", (superblock.s_inode_size * (inodeInGroup - 1)));
+
+	 char* data = getBlock(blockGDescriptorTable[blockGroupOfInode].bg_inode_table, sizeof(ext2_inode), (superblock.s_inode_size * (inodeInGroup - 1)));
+
+	 struct ext2_inode inodet;
+	 std::memcpy(&inodet, data, sizeof(ext2_inode));
+
+	 return inodet;
 }
 
 //check superblocks and verify their integrity:
 int ext2::verify_superblocks()
 {
 	//take the number of block groups and then read in the superblock copies.
-	const int width = 17;
 
-	printElement("block Group",width);
-	printElement("inodes count", width);
-	printElement("blocks count", width);
-	printElement("r blocks count", width);
-	printElement("first data block", width);
-	printElement("log block size", width);
-	printElement("log frag size", width);
-	printElement("blocks per group", width);
+	printf("Block    Inodes    Blocks    Reserved     First     Log Block   Log Frag   Blocks Per\n"
+				 "Group    Count     Count     Blocks     Data Block     Size         Size        Group\n"
+			   "-------------------------------------------------------------------------------------\n");
 
-	std::cout << std::endl;
-
-	printElement("Superblock",width);
-	printElement(superblock.s_inodes_count, width);
-	printElement(superblock.s_blocks_count, width);
-	printElement(superblock.s_r_blocks_count, width);
-	printElement(superblock.s_first_data_block, width);
-	printElement(superblock.s_log_block_size, width);
-	printElement(superblock.s_log_cluster_size, width);
-	printElement(superblock.s_blocks_per_group, width);
-
-	std::cout << std::endl;
 
 	for (unsigned int i = 0; i < group_count; i++)
 	{
-		if (isPowerof357(i))
+		if (isPowerof357(i) || i == 0)
 		{
 			ext2_super_block *copy;
-			copy = (ext2_super_block *) getBlock(i*superblock.s_blocks_per_group,( 1024 << superblock.s_log_block_size), superblock.s_first_data_block);
+			unsigned int offset = 0;
+			if (i == 0 || blockGroupDescriptorTableLocation - 1)
+				offset = EXT2_SUPER_BLOCK_OFFSET;
 
-			//print current block group
-			printElement(i,width);
-			//test the important bits;
-			printElement(copy->s_inodes_count, width);
-			printElement(copy->s_blocks_count, width);
-			printElement(copy->s_r_blocks_count, width);
-			printElement(copy->s_first_data_block, width);
-			printElement(copy->s_log_block_size, width);
-			printElement(copy->s_log_cluster_size, width);
-			printElement(copy->s_blocks_per_group, width);
+			copy = (ext2_super_block *) getBlock(i * superblock.s_blocks_per_group, sizeof(ext2_super_block), offset);
 
-			std::cout << std::endl;
-
+			printf("%5u %9u %9u %11u %12u %11u %10u %12u\n",
+						i,
+						copy->s_inodes_count,
+						copy->s_blocks_count,
+						copy->s_r_blocks_count,
+						copy->s_first_data_block,
+						copy->s_log_block_size,
+						copy->s_log_cluster_size,
+						copy->s_blocks_per_group);
 			delete copy;
 		}
 	}
-	std::cout << std::endl;
 
-	printElement("block Group",width);
-	printElement("frags per group", width);
-	printElement("magic", width);
-	printElement("minor rev level", width);
-	printElement("creator os", width);
-	printElement("rev level", width);
-	printElement("first ino", width);
-	printElement("inode size", width);
+	printf("\n\n"
+				 "Block    Frags Per    Magic     Minor Revision    Creator    Revision    First    Inode\n"
+				 "Group    Group                  Level             OS         Level       Inode    Size \n"
+			 	 "---------------------------------------------------------------------------------------\n");
 
-	std::cout << std::endl;
-	printElement("Superblock",width);
-	printElement(superblock.s_clusters_per_group, width);
-	printElement(superblock.s_magic, width);
-	printElement(superblock.s_minor_rev_level, width);
-	printElement(superblock.s_creator_os, width);
-	printElement(superblock.s_rev_level, width);
-	printElement(superblock.s_first_ino, width);
-	printElement(superblock.s_inode_size, width);
-
-	std::cout<<std::endl;
-
-	for (unsigned int i = 1; i < group_count; i++)
-	{
-		if (isPowerof357(i))
-		{
-			ext2_super_block *copy; // = new ext2_super_block[sizeof(ext2_super_block)];
-			copy = (ext2_super_block *) getBlock(i*superblock.s_blocks_per_group,( 1024 << superblock.s_log_block_size), superblock.s_first_data_block);
-
-			//print current block group
-			printElement(i,width);
-			//test the important bits;
-			printElement(copy->s_clusters_per_group, width);
-			printElement(copy->s_magic, width);
-			printElement(copy->s_minor_rev_level, width);
-			printElement(copy->s_creator_os, width);
-			printElement(copy->s_rev_level, width);
-			printElement(copy->s_first_ino, width);
-			printElement(copy->s_inode_size, width);
-
-			delete copy;
-
-			std::cout << std::endl;
-		}
-	}
-	return 0;
-}
-
-int ext2::verify_blockgrouptables()
-{
 	for (unsigned int i = 0; i < group_count; i++)
 	{
-		if (isPowerof357(i))
+		if (isPowerof357(i) || i == 0)
 		{
+			ext2_super_block *copy;
+			unsigned int offset = 0;
+			if (i == 0 || blockGroupDescriptorTableLocation - 1)
+				offset = EXT2_SUPER_BLOCK_OFFSET;
 
+			copy = (ext2_super_block *) getBlock(i*superblock.s_blocks_per_group, sizeof(ext2_super_block), offset);
+
+			printf("%5u %12u %8u %18u %10u %11u %8u %8u\n",
+						i,
+						copy->s_clusters_per_group,
+						copy->s_magic,
+						copy->s_minor_rev_level,
+						copy->s_creator_os,
+						copy->s_rev_level,
+						copy->s_first_ino,
+						copy->s_inode_size);
+
+			delete copy;
 		}
 	}
+	printf("\n\n");
 	return 0;
 }
 
-template<typename T> void printElement(T t, const int& width)
+int ext2::dump_blockgrouptables()
 {
-    std::cout << std::left << std::setw(width) << std::setfill(' ') << t;
+	printf("Group    Block     Inode      Inode    Free      Free        Used\n"
+         "         Bitmap    Bitmap     Table    Blocks    Inodes      Dirs\n"
+         "-----------------------------------------------------------------\n");
+	for (unsigned int i = 0; i < group_count; i++)
+	{
+		printf("%5u %9u %9u %9u %9u %9u %9u\n",
+					i,
+					blockGDescriptorTable[i].bg_block_bitmap,
+					blockGDescriptorTable[i].bg_inode_bitmap,
+					blockGDescriptorTable[i].bg_inode_table,
+					blockGDescriptorTable[i].bg_free_blocks_count,
+					blockGDescriptorTable[i].bg_free_inodes_count,
+					blockGDescriptorTable[i].bg_used_dirs_count);
+	}
+	printf("\n\n");
+	return 0;
+}
+
+int ext2::verify_inodes(unsigned long long inodeNumber)
+{
+	/*
+	 * Starting at inode 2 (root), read through each inode, recursively
+	*/
+	try {
+		struct ext2_inode inodet = this->getInode(inodeNumber);
+		printf("here!");
+
+		//if file, return 0
+		if (inodet.i_mode & EXT2_S_IFREG)
+		{
+			printf("inode: %u\n"
+						"Size: %u\n"
+						"links: %u\n",
+						inodet.i_mode,
+						inodet.i_size,
+						inodet.i_links_count);
+			return 0;
+		}
+
+		//if DIR, recurse through inodes in ext2_dir_entry_2
+		if (inodet.i_mode & EXT2_S_IFDIR)
+		{
+			for (size_t i = 0; i < EXT2_NDIR_BLOCKS; i++)
+			{
+				printf("i: 0x%x\n", inodet.i_block[i]);
+				this->verify_inodes(inodet.i_block[i]);
+			}
+		}
+	}
+	catch(inodeNotAllocated)
+	{
+			printf("Inode is not allocated");
+	}
 }
 
 bool isPowerof357(unsigned int number)
