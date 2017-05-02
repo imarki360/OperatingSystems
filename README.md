@@ -1,11 +1,13 @@
 # OperatingSystems
 EXT2 file system integrety check in a VDI file.
 
-WHAT HAVE YOU DONNNEEEEEEE????????????????????????????????
-Hey bish. 
+To build:
+  make
+To run:
+  ./read <filename>
 
 
-             
+
 	         .-=-==--==--.
        ..-=="  ,'o`)      `.
      ,'         `"'         \
@@ -35,4 +37,3 @@ Hey bish.
                                  /"       "| /-".:z%%%:k%\
                                                  ;,-"'`)%%)   (CJ)
                                                 /"      "|
-

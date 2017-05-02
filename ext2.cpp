@@ -6,6 +6,7 @@
 #include <cstring>
 #include <stdio.h>
 #include <assert.h>
+#include <vector>
 
 ext2::ext2(VirtualBoxClass* VirtualBox) : vb(VirtualBox)
 {
@@ -264,20 +265,64 @@ int ext2::verify_inodes(unsigned long long inodeNumber)
 		{
 			for (size_t i = 0; i < EXT2_NDIR_BLOCKS; i++)
 			{
-				printf("i: 0x%x\n", inodet.i_block[i]);
-				this->verify_inodes(inodet.i_block[i]);
+				if(inodet.i_block[i] != 0)
+				{
+					this->getDir(inodet.i_block[i], 0);
+				}
+				//printf("i: 0x%x\n", inodet.i_block[i]);
+				//this->verify_inodes(inodet.i_block[i]); //WRONG
+				//read in DIR entry
 			}
 		}
 	}
 	catch(inodeNotAllocated)
 	{
 			printf("Inode is not allocated");
+			return 1;
 	}
+
+	return 0;
+}
+
+struct ext2_dir_entry_2 ext2::getDir(unsigned long block, unsigned long offsetDir)
+{
+	std::vector<struct ext2_dir_entry_2> dirEntries;
+	struct ext2_dir_entry_2 temp;
+	unsigned int totalRecordLength = 0;
+
+	std::memcpy(&temp,this->getBlock(block, *(this->getBlock(block,2,4)), 0), *(this->getBlock(block,2,4)));
+
+	printf("Block: 0x%x\nlength: %x\nFileType: %x\nName: %s\n", block, temp.name_len,temp.file_type, temp.name);
+
+	totalRecordLength += temp.rec_len;
+
+	dirEntries.push_back(temp);
+	//if (offsetDir == 0)
+		//return temp;
+	bool moreEntries = totalRecordLength - (1024 << superblock.s_log_block_size);
+	while(moreEntries)
+	{
+		char* length = this->getBlock(block,2,4 + totalRecordLength);
+		unsigned int length2 = (unsigned int) *length;
+		if (length2 >= (1024 << superblock.s_log_block_size))
+			break;
+		printf("length2: %u\n", length2);
+		delete length;
+		std::memcpy(&temp, this->getBlock(block, length2, totalRecordLength), length2);
+		printf("%u\n", totalRecordLength);
+		totalRecordLength += temp.rec_len;
+		moreEntries = totalRecordLength - (1024 << superblock.s_log_block_size);
+		dirEntries.push_back(temp);
+	}
+
+	return temp;
+
 }
 
 bool isPowerof357(unsigned int number)
 {
 	//this was a fun one
+	//3^19, 5^19, and 7^19 respectively. Avoids the pesky while loop by seeing if max unsigned int is divisible evenly.
 	return (number != 0 && 3486784401u % number == 0) || (number != 0 && 95367431640625u % number == 0) || (number != 0 && 79792266297612001u % number == 0);
 }
 

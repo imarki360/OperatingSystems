@@ -25,7 +25,7 @@ public:
   char* getBlock(int blockNumber, int bytes, int offsetBytes);
 
   struct ext2_inode getInode(unsigned long long inode);
-  struct ext2_dir_entry_2 getDir(unsigned int block, unsigned int offsetDir);
+  struct ext2_dir_entry_2 getDir(unsigned long block, unsigned long offsetDir);
 
   //verification and output:
   int verify_superblocks();

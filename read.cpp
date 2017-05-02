@@ -17,14 +17,23 @@
 
 const int EXT2_SUPER_BLOCK_OFFSET = 1024;
 
-int main()
+int main(int argc, char** argv)
 {
 	/*
-	 * TODO: Implitent a command line parser.
-	 */
+	 * Command line parser.
+	*/
+
+	if (argc == 1)
+	{
+		printf("You must specify a filename\n"
+					 "Usage: read <filename>\n");
+	}
+	char* pathname = argv[argc - 1];
+
+
 	//char pathname[280] = "Debian1.0.vdi";
 	//char pathname[280] = "Test-fixed-4k.vdi";
-	char pathname[280] = "Test-dynamic-1k.vdi";
+	//char pathname[280] = "Test-dynamic-1k.vdi";
 	int file = open(pathname,O_RDONLY);
 	if (file == -1)
 		throw CouldNotReadFile();
