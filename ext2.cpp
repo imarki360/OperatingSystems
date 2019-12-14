@@ -11,7 +11,7 @@
 ext2::ext2(VirtualBoxClass* VirtualBox) : vb(VirtualBox)
 {
 
-  //so, lets read in the Boot Sector
+  	//so, lets read in the Boot Sector
 	int arraySize = sizeof(BootSector);
 	char* data = new char[arraySize];
 	//printf("%d", arraySize);
@@ -19,7 +19,7 @@ ext2::ext2(VirtualBoxClass* VirtualBox) : vb(VirtualBox)
 	std::memcpy(&mbr, data, arraySize);
 	delete data;
 
-  /*
+  	/*
 	 * Now that we have the MBR, we can then figure out where the ext2 filesystem lies.
 	 * Find first valid linux partition and check magic number
 	*/
@@ -38,16 +38,16 @@ ext2::ext2(VirtualBoxClass* VirtualBox) : vb(VirtualBox)
 	if (mbr.magic != BOOT_SECTOR_MAGIC)
 		throw invalid_bootSector();
 
-  ext2FirstSector_byte = mbr.partitionTable[ext2_partition].firstSector * VirtualBox->header.sector_size;
+	ext2FirstSector_byte = mbr.partitionTable[ext2_partition].firstSector * VirtualBox->header.sector_size;
 	//printf("ext2FirstSector_byte: 0x%x\n",ext2FirstSector_byte);
 
-  /*
-   * Now its time to start reading in the ext2 filesystem information. First, lets read in the superblock.
-	 * Checks superblock magic number
-  */
+	/*
+	* Now its time to start reading in the ext2 filesystem information. First, lets read in the superblock.
+		* Checks superblock magic number
+	*/
 
-  data = new char[sizeof(ext2_super_block)];
-  VirtualBox->getBytes(data, ext2FirstSector_byte + EXT2_SUPER_BLOCK_OFFSET, sizeof(ext2_super_block));
+	data = new char[sizeof(ext2_super_block)];
+	VirtualBox->getBytes(data, ext2FirstSector_byte + EXT2_SUPER_BLOCK_OFFSET, sizeof(ext2_super_block));
 	std::memcpy(&superblock,data,sizeof(ext2_super_block));
 	delete data;
 
@@ -113,43 +113,43 @@ struct ext2_inode ext2::getInode(unsigned long long inode)
 	 * if allocated, then return the inode struct. The inode table can be found at blockGDescriptorTable.bg_inode_table + (blockgroup * superblock.s_blocks_per_group);
 	 */
 
-	 int blockGroupOfInode = inode / superblock.s_inodes_per_group;
-	 unsigned long long inodeInGroup = inode % superblock.s_inodes_per_group;
+	int blockGroupOfInode = inode / superblock.s_inodes_per_group;
+	unsigned long long inodeInGroup = inode % superblock.s_inodes_per_group;
 
 	//  printf("inodeInGroup: %i\n",inodeInGroup);
 	//  printf("blockGroupOfInode: %i\n", blockGroupOfInode);
 	//  printf("inodesPerGroup: %u\n", superblock.s_inodes_per_group);
 
-	 bool* inode_map;
-	 inode_map = (bool*) getBlock(blockGDescriptorTable[blockGroupOfInode].bg_inode_bitmap, superblock.s_inodes_per_group / 8);
+	bool* inode_map;
+	inode_map = (bool*) getBlock(blockGDescriptorTable[blockGroupOfInode].bg_inode_bitmap, superblock.s_inodes_per_group / 8);
 
-	 /*
-	  * Of course, since sizeof(bool) = 1 byte, we now need to to some bit shifting to get the
-		* information we want.
-		*
+	/*
+	 * Of course, since sizeof(bool) = 1 byte, we now need to to some bit shifting to get the
+	 * information we want.
+	 *
 	 */
 
-	 int temp = inode_map[inodeInGroup / 8];
-	 temp = (temp >> inodeInGroup) & 0x1;
+	int temp = inode_map[inodeInGroup / 8];
+	temp = (temp >> inodeInGroup) & 0x1;
 
-	 if (temp == 0 || inode == 0)
-	 {
-		 printf("inodeNotAllocated\n");
-		 throw inodeNotAllocated();
-	 }
+	if (temp == 0 || inode == 0)
+	{
+		printf("inodeNotAllocated\n");
+		throw inodeNotAllocated();
+	}
 
-	 //TODO: check if inode is actually in use, but is not marked as allocated, or is marked as allocated but not in use.
+	//TODO: check if inode is actually in use, but is not marked as allocated, or is marked as allocated but not in use.
 
-	 //Get the inode:
+	//Get the inode:
 	//  printf("Inode Block: 0x%x\n", blockGDescriptorTable[blockGroupOfInode].bg_inode_table);
 	//  printf("Inode Offset: 0x%x\n", (superblock.s_inode_size * (inodeInGroup - 1)));
 
-	 char* data = getBlock(blockGDescriptorTable[blockGroupOfInode].bg_inode_table, sizeof(ext2_inode), (superblock.s_inode_size * (inodeInGroup - 1)));
+	char* data = getBlock(blockGDescriptorTable[blockGroupOfInode].bg_inode_table, sizeof(ext2_inode), (superblock.s_inode_size * (inodeInGroup - 1)));
 
-	 struct ext2_inode inodet;
-	 std::memcpy(&inodet, data, sizeof(ext2_inode));
+	struct ext2_inode inodet;
+	std::memcpy(&inodet, data, sizeof(ext2_inode));
 
-	 return inodet;
+	return inodet;
 }
 
 //check superblocks and verify their integrity:
@@ -322,7 +322,7 @@ struct ext2_dir_entry_2 ext2::getDir(unsigned long block, unsigned long offsetDi
 bool isPowerof357(unsigned int number)
 {
 	//this was a fun one
-	//3^19, 5^19, and 7^19 respectively. Avoids the pesky while loop by seeing if max unsigned int is divisible evenly.
+	//3^20, 5^20, and 7^20 respectively. Avoids the pesky while loop by seeing if max unsigned int is divisible evenly.
 	return (number != 0 && 3486784401u % number == 0) || (number != 0 && 95367431640625u % number == 0) || (number != 0 && 79792266297612001u % number == 0);
 }
 
